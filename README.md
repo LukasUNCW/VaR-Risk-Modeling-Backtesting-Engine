@@ -54,7 +54,18 @@ run_port.py
 
 run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_port"
 
+## Visualizations
 
+<img width="1260" height="938" alt="var_backtest_portfolio" src="https://github.com/user-attachments/assets/b94c85da-f32f-4b86-91b0-a459ed3b113e" />
+
+What this chart shows:
+- X-axis: Time (trading days)
+- Y-axis: Loss magnitude (positive = bad)
+- Lines:
+  - Realized loss: actual next-day porfolio loss
+  - VaR lines (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)\
+
+This is a rolling, out of sample risk forecast.
 
 
 
