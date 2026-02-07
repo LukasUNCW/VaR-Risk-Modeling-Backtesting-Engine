@@ -103,3 +103,9 @@ What clustering means:
 - Parametric VaR trends to cluster more
 - Monte Carlo usually improves clustering behavior
 
+Loss Distribution with VaR Threshold
+
+<img width="1260" height="938" alt="loss_dist_var_portfolio" src="https://github.com/user-attachments/assets/ddf4892c-8788-44df-aa76-a49c5a2a0770" />
+
+
+
