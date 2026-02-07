@@ -56,6 +56,8 @@ run the following inside desired IDE terminal and inside correct directory "py -
 
 ## Visualizations
 
+Rolling VaR Backtest (VaR vs Realized Loss)
+
 <img width="1260" height="938" alt="var_backtest_portfolio" src="https://github.com/user-attachments/assets/b94c85da-f32f-4b86-91b0-a459ed3b113e" />
 
 What this chart shows:
@@ -63,10 +65,41 @@ What this chart shows:
 - Y-axis: Loss magnitude (positive = bad)
 - Lines:
   - Realized loss: actual next-day porfolio loss
-  - VaR lines (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)\
+  - VaR lines (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)
 
 This is a rolling, out of sample risk forecast.
 
+How to read it: 
+- Most of the time:
+  - The loss line stays below VaR
+- Occasionally:
+  - The loss spikes above VaR -> these are exceptions
+- During volatile periods:
+  - VaR lines rise (risk adapts)
+- During calm periods:
+  - VaR compresses (risk declines)
 
+Exception Timeline (VaR Failures)
 
+<img width="1260" height="938" alt="exceptions_mc_portfolio" src="https://github.com/user-attachments/assets/98dc224f-7e5d-448c-bd7b-4b52914c5580" />
+
+What this chart shows:
+- Each dot = one VaR exception
+- X-axis: date
+- Y-axis: 1 -> loss exceeded VaR
+
+This is a binary diagnositc of VaR correctness.
+
+How to read it: 
+- You expect exceptions at roughly:
+  - (1 − α)% of days
+  - For α = 99% -> ~1% of days
+
+What clustering means:
+- Clusters -> VaR is slow to react
+- Often happens:
+  - During crises
+  - When volatility jumps suddenly
+- Parametric VaR trends to cluster more
+- Monte Carlo usually improves clustering behavior
 
