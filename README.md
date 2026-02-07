@@ -107,5 +107,11 @@ Loss Distribution with VaR Threshold
 
 <img width="1260" height="938" alt="loss_dist_var_portfolio" src="https://github.com/user-attachments/assets/ddf4892c-8788-44df-aa76-a49c5a2a0770" />
 
+What this chart shows
+- Histogram of historical portfolio losses
+- Vertical dashed line = VaR threshold
+- Area to the right of the line = tail risk
+
+This is the statistical meaning of VaR, visualized.
 
 
