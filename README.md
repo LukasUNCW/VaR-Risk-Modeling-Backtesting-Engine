@@ -58,6 +58,7 @@ run_single_asset.py
 - Runs backtesting
 - Plots results
 Run it with the following command inside your desired IDE:
+</br>
 py -3.14 -m scripts.run_single_asset
 
 run_port.py
@@ -67,4 +68,5 @@ run_port.py
 - Backtests all models
 - Plots portfolio risk
 Run it with the following command inside your desired IDE:
+</br>
 py -3.14 -m scripts.run_port
