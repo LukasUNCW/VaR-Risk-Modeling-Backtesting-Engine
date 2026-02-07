@@ -138,3 +138,16 @@ What this chart shows:
 
 This isolates model assumptions.
 
+How to read it:
+- Historical VaR:
+  - Data-driven
+  - Sensitive to recent history
+- Parametric VaR:
+  - Assumes normality
+  - Often lowest (underestimates tails)
+- Monte Carlo VaR:
+  - Incorporates correlations
+  - Usually more conservative
+
+Differences between bars = model risk.
+
