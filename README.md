@@ -38,6 +38,7 @@ Make sure to have your files set up as listed above.
 ## How it works
 
 var-lab/ -> the engine
+</br>
 This folder is the libray. Nothing in this folder should be run directly
 
 files: 
@@ -48,6 +49,7 @@ backtest.py -> Detects exceptions and runs Kupiec POF test
 plots.py -> Produces VaR vs loss plots
 
 scripts/ -> the applications
+</br>
 These files wire everything together and are what users will actually run. 
 
 run_single_asset.py
