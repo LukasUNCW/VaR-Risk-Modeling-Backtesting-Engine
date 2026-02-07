@@ -53,3 +53,9 @@ run_port.py
 - Plots portfolio risk
 
 run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_port"
+
+
+
+
+
+
