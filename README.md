@@ -8,8 +8,6 @@ This project mirrors how risk engines are built and evaluated in real financial 
 - reproducibility
 - realistic assumptions (rolling windows, no look ahead bias)
 
----
-
 ## Key Features
 
 ### Risk Models
@@ -28,39 +26,24 @@ This project mirrors how risk engines are built and evaluated in real financial 
 - Log return modeling for numerical stability
 - VaR vs realized-loss plots for diagnostic analysis
 
----
-
-## Project Structure
-<img width="581" height="357" alt="image" src="https://github.com/user-attachments/assets/a2134880-ecfe-4b2e-a07a-152bee29c8cf" />
-</br>
-Make sure to have your files set up as listed above. 
-
 ## How it works
 
-var-lab/ -> the engine
+Files: 
+- data.py -> Downloads and cleans price data
+- returns.py -> Computes log returns and portfolio returns
+- models.py -> Implements Historical, Parametric, Monte Carlo VaR + CVaR
+- backtest.py -> Detects exceptions and runs Kupiec POF test
+- plots.py -> Produces VaR vs loss plots
+
+Scripts:
 </br>
-This folder is the libray. Nothing in this folder should be run directly
-
-files: 
-data.py -> Downloads and cleans price data
-returns.py -> Computes log returns and portfolio returns
-models.py -> Implements Historical, Parametric, Monte Carlo VaR + CVaR
-backtest.py -> Detects exceptions and runs Kupiec POF test
-plots.py -> Produces VaR vs loss plots
-
-scripts/ -> the applications
-</br>
-These files wire everything together and are what users will actually run. 
-
 run_single_asset.py
 - Loads one asset (e.g., SPY)
 - Computes rolling Historical + Parametric VaR
 - Runs backtesting
 - Plots results
-Run it with the following command inside your desired IDE:
-</br>
-py -3.14 -m scripts.run_single_asset
 
+run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_single_asset"
 
 run_port.py
 - Loads multiple assets, this is configurable
@@ -68,6 +51,5 @@ run_port.py
 - Runs Historical, Parametric, Monte Carlo VaR
 - Backtests all models
 - Plots portfolio risk
-Run it with the following command inside your desired IDE:
-</br>
-py -3.14 -m scripts.run_port
+
+run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_port"
