@@ -60,6 +60,7 @@ Rolling VaR Backtest (VaR vs Realized Loss)
 
 <img width="1260" height="938" alt="var_backtest_portfolio" src="https://github.com/user-attachments/assets/b94c85da-f32f-4b86-91b0-a459ed3b113e" />
 
+
 What this chart shows:
 - X-axis: Time (trading days)
 - Y-axis: Loss magnitude (positive = bad)
@@ -82,6 +83,7 @@ How to read it:
 Exception Timeline (VaR Failures)
 
 <img width="1260" height="938" alt="exceptions_mc_portfolio" src="https://github.com/user-attachments/assets/98dc224f-7e5d-448c-bd7b-4b52914c5580" />
+
 
 What this chart shows:
 - Each dot = one VaR exception
@@ -114,4 +116,25 @@ What this chart shows
 
 This is the statistical meaning of VaR, visualized.
 
+How to read it
+-VaR is a quantile, not a worst case
+- At 99% VaR:
+  - 99% of losses fall left of the line
+  - 1% fall right (tail losses)
+- The tail often:
+  - Is skewed
+  - Is heavier than a normal distribution
+
+Model Comparison Bar Chart
+
+<img width="1260" height="938" alt="model_compare_portfolio" src="https://github.com/user-attachments/assets/ec517f2d-f595-4ad0-a191-18489f66518e" />
+
+What this chart shows:
+- One bar per VaR model
+- All computed:
+  - Same date
+  - Same portfolio
+  - Same confidence level
+
+This isolates model assumptions.
 
