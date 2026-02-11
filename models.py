@@ -69,18 +69,35 @@ def var_monte_carlo_portfolio(
     seed: int = 42,
 ) -> float:
     """
-    Monte Carlo VaR for a portfolio using multivariate normal with empirical mean/cov.
-    returns: T x N
-    weights: N
+    Monte Carlo VaR for multi-asset port
+
+    assumes returns follow multivariate norm distro with empirical mean and covariance from data
+
+    parameters
+        returns: pd.DataFrame
+            T x N matrix of asset returns
+        weights: np.ndarray
+            port weights length of N
+        alpha: float
+            confidence level
+        n_sims: int
+            n of Monte Carlo simulations 
+        seed: int
+            random seed for reproduciblity
+
+        returns:
+            float
+                port VaR positive loss format
     """
-    rng = np.random.default_rng(seed)
-    mu = returns.mean().to_numpy()
-    cov = returns.cov().to_numpy()
+    rng = np.random.default_rng(seed) # NumPy rand num generator
+    mu = returns.mean().to_numpy() # compute mean return vector length N
+    cov = returns.cov().to_numpy() # compute covariance matrix N x N
 
-    sims = rng.multivariate_normal(mu, cov, size=n_sims)  # S x N
-    w = np.asarray(weights, dtype=float)
-    w = w / w.sum()
-    port = sims @ w  # S
-    q = np.quantile(port, 1 - alpha)
+    sims = rng.multivariate_normal(mu, cov, size=n_sims) # sim multivariate normal returns, output shape = n_sims, N
+    w = np.asarray(weights, dtype=float) # converts weights to NumPy array
+    w = w / w.sum() # normalize weights to ensure they sum to 1, protects against user input error 
+    port = sims @ w  # compute simulated port returns, matrix multiplication
+    q = np.quantile(port, 1 - alpha) # left-tail quantile of port returns
 
-    return float(-q)
+    return float(-q) # convert to positive loss value
+
