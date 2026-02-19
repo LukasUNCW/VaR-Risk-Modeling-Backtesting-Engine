@@ -117,7 +117,7 @@ What this chart shows
 This is the statistical meaning of VaR, visualized.
 
 How to read it
--VaR is a quantile, not a worst case
+- VaR is a quantile, not a worst case
 - At 99% VaR:
   - 99% of losses fall left of the line
   - 1% fall right (tail losses)
