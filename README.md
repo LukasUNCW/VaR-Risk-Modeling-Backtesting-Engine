@@ -1,20 +1,44 @@
-# VaR Risk Modeling Backtesting Engine
+# VaR Risk Modeling & Backtesting Engine
 
-A Python-based  project that implements Value-at-Risk (VaR) models and industry-standard backtesting to measure and validate market risk for single and multi asset portfolios.
+A Python-based project that implements Value-at-Risk (VaR) models and industry-standard backtesting to measure and validate market risk for single and multi-asset portfolios.
 
 This project mirrors how risk engines are built and evaluated in real financial institutions, emphasizing:
-- statistical rigor
-- clean software design
-- reproducibility
-- realistic assumptions (rolling windows, no look ahead bias)
+- Statistical rigor
+- Clean software design
+- Reproducibility
+- Realistic assumptions (rolling windows, no look-ahead bias)
+
+---
+
+## Table of Contents
+- [Tech Stack](#tech-stack)
+- [Key Features](#key-features)
+- [Project Structure](#project-structure)
+- [Prerequisites & Installation](#prerequisites--installation)
+- [How to Run](#how-to-run)
+- [Visualizations](#visualizations)
+
+---
+
+## Tech Stack
+
+| Tool | Purpose |
+|---|---|
+| Python 3.14 | Core language |
+| yfinance | Market data retrieval |
+| NumPy / pandas | Data manipulation and return computation |
+| SciPy | Statistical testing (Kupiec POF) |
+| Matplotlib | Visualization |
+
+---
 
 ## Key Features
 
 ### Risk Models
-- Historical VaR (non-parametric, quantile-based): Estimates risk by taking the empirical loss quantile from historical returns without assuming any specific return distribution.
-- Parametric VaR (Normal): Models risk by assuming returns follow a normal distribution and computing VaR from the rolling mean and standard deviation. 
-- Monte Carlo VaR: Simulates thousands of correlated asset return scenarios using estimated means and covariances to estimate portfolio level VaR.
-- Expected Shortfall (CVaR): Measures the average loss conditional on losses exceeding the VaR threshold, providing insight into the severity of extreme outcomes. 
+- **Historical VaR** (non-parametric, quantile-based): Estimates risk by taking the empirical loss quantile from historical returns without assuming any specific return distribution.
+- **Parametric VaR** (Normal): Models risk by assuming returns follow a normal distribution and computing VaR from the rolling mean and standard deviation.
+- **Monte Carlo VaR**: Simulates thousands of correlated asset return scenarios using estimated means and covariances to estimate portfolio-level VaR.
+- **Expected Shortfall (CVaR)**: Measures the average loss conditional on losses exceeding the VaR threshold, providing insight into the severity of extreme outcomes.
 
 ### Backtesting
 - Rolling-window VaR estimation
@@ -22,132 +46,146 @@ This project mirrors how risk engines are built and evaluated in real financial 
 - Kupiec Proportion-of-Failures (POF) test for statistical validation
 
 ### Visualization
-- Market data sourced via Yahoo Finance (yfinance) Python library
-- Log return modeling for numerical stability
-- VaR vs realized-loss plots for diagnostic analysis
+- VaR vs. realized-loss plots for diagnostic analysis
+- Exception timeline charts
+- Loss distribution histograms with VaR threshold overlay
+- Model comparison bar charts
 
-## How it works
+---
 
-Files: 
-- data.py -> Downloads and cleans price data
-- returns.py -> Computes log returns and portfolio returns
-- models.py -> Implements Historical, Parametric, Monte Carlo VaR + CVaR
-- backtest.py -> Detects exceptions and runs Kupiec POF test
-- plots.py -> Produces VaR vs loss plots
+## Project Structure
 
-Scripts:
-</br>
-run_single_asset.py
-- Loads one asset (e.g., SPY)
-- Computes rolling Historical + Parametric VaR
-- Runs backtesting
-- Plots results
+```
+VaR-Risk-Modeling-Backtesting-Engine/
+│
+├── scripts/
+│   ├── run_single_asset.py   # Single asset analysis runner
+│   └── run_port.py           # Multi-asset portfolio runner
+│
+├── data.py                   # Downloads and cleans price data
+├── returns.py                # Computes log returns and portfolio returns
+├── models.py                 # Historical, Parametric, Monte Carlo VaR + CVaR
+├── backtest.py               # Exception detection and Kupiec POF test
+└── plots.py                  # VaR vs loss visualizations
+```
 
-run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_single_asset"
+---
 
-run_port.py
-- Loads multiple assets, this is configurable
-- Computes portfolio returns
-- Runs Historical, Parametric, Monte Carlo VaR
-- Backtests all models
-- Plots portfolio risk
+## Prerequisites & Installation
 
-run the following inside desired IDE terminal and inside correct directory "py -3.14 -m scripts.run_port"
+**1. Clone the repository**
+```bash
+git clone https://github.com/LukasUNCW/VaR-Risk-Modeling-Backtesting-Engine.git
+cd VaR-Risk-Modeling-Backtesting-Engine
+```
+
+**2. Install dependencies**
+```bash
+pip install yfinance numpy pandas scipy matplotlib
+```
+
+**3. Ensure you are using Python 3.14**
+```bash
+python --version
+```
+
+---
+
+## How to Run
+
+Run both scripts from inside the project's root directory using the commands below.
+
+### Single Asset (`run_single_asset.py`)
+Analyzes one asset (e.g., SPY). Computes rolling Historical and Parametric VaR, runs backtesting, and plots results.
+
+```bash
+py -3.14 -m scripts.run_single_asset
+```
+
+### Portfolio (`run_port.py`)
+Analyzes multiple assets (configurable). Computes portfolio returns, runs Historical, Parametric, and Monte Carlo VaR, backtests all models, and plots portfolio risk.
+
+```bash
+py -3.14 -m scripts.run_port
+```
+
+> **Note:** To configure the portfolio assets, edit the ticker list inside `scripts/run_port.py`.
+
+---
 
 ## Visualizations
 
-Rolling VaR Backtest (VaR vs Realized Loss)
+### Rolling VaR Backtest (VaR vs. Realized Loss)
 
 <img width="1260" height="938" alt="var_backtest_portfolio" src="https://github.com/user-attachments/assets/b94c85da-f32f-4b86-91b0-a459ed3b113e" />
 
-
-
-What this chart shows:
+**What this chart shows:**
 - X-axis: Time (trading days)
 - Y-axis: Loss magnitude (positive = bad)
 - Lines:
-  - Realized loss: actual next-day porfolio loss
-  - VaR lines (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)
+  - **Realized loss**: actual next-day portfolio loss
+  - **VaR lines** (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)
 
-This is a rolling, out of sample risk forecast.
+This is a rolling, out-of-sample risk forecast.
 
-How to read it: 
-- Most of the time:
-  - The loss line stays below VaR
-- Occasionally:
-  - The loss spikes above VaR -> these are exceptions
-- During volatile periods:
-  - VaR lines rise (risk adapts)
-- During calm periods:
-  - VaR compresses (risk declines)
+**How to read it:**
+- Most of the time, the loss line stays below VaR — this is expected behavior
+- When the loss spikes above a VaR line, that is called an **exception**
+- During volatile periods, VaR lines rise (risk adapts)
+- During calm periods, VaR compresses (risk declines)
 
-Exception Timeline (VaR Failures)
+---
+
+### Exception Timeline (VaR Failures)
 
 <img width="1260" height="938" alt="exceptions_mc_portfolio" src="https://github.com/user-attachments/assets/98dc224f-7e5d-448c-bd7b-4b52914c5580" />
 
-What this chart shows:
-- Each dot = one VaR exception
-- X-axis: date
-- Y-axis: 1 -> loss exceeded VaR
+**What this chart shows:**
+- Each dot = one VaR exception (a day where the realized loss exceeded the VaR estimate)
+- X-axis: Date
+- Y-axis: 1 = loss exceeded VaR
 
-This is a binary diagnositc of VaR correctness.
+This is a binary diagnostic of VaR model correctness.
 
-How to read it: 
-- You expect exceptions at roughly:
-  - (1 − α)% of days
-  - For α = 99% -> ~1% of days
+**How to read it:**
+- At a 99% confidence level (α = 0.99), you expect exceptions on roughly **1% of trading days**
+- **Clustered exceptions** indicate the model is slow to react — common during market crises or sudden volatility spikes
+- Parametric VaR tends to cluster more; Monte Carlo typically improves clustering behavior
 
-What clustering means:
-- Clusters -> VaR is slow to react
-- Often happens:
-  - During crises
-  - When volatility jumps suddenly
-- Parametric VaR trends to cluster more
-- Monte Carlo usually improves clustering behavior
+---
 
-Loss Distribution with VaR Threshold
+### Loss Distribution with VaR Threshold
 
 <img width="1260" height="938" alt="loss_dist_var_portfolio" src="https://github.com/user-attachments/assets/ddf4892c-8788-44df-aa76-a49c5a2a0770" />
 
-What this chart shows
+**What this chart shows:**
 - Histogram of historical portfolio losses
 - Vertical dashed line = VaR threshold
 - Area to the right of the line = tail risk
 
-This is the statistical meaning of VaR, visualized.
+This is the statistical meaning of VaR, visualized directly.
 
-How to read it
-- VaR is a quantile, not a worst case
-- At 99% VaR:
-  - 99% of losses fall left of the line
-  - 1% fall right (tail losses)
-- The tail often:
-  - Is skewed
-  - Is heavier than a normal distribution
+**How to read it:**
+- VaR is a **quantile**, not a worst-case scenario
+- At 99% VaR: 99% of losses fall to the left of the line; 1% fall to the right (tail losses)
+- The tail is often skewed and heavier than a normal distribution assumes — this is why Historical and Monte Carlo VaR often outperform Parametric VaR
 
-Model Comparison Bar Chart
+---
+
+### Model Comparison Bar Chart
 
 <img width="1260" height="938" alt="model_compare_portfolio" src="https://github.com/user-attachments/assets/ec517f2d-f595-4ad0-a191-18489f66518e" />
 
-What this chart shows:
-- One bar per VaR model
-- All computed:
-  - Same date
-  - Same portfolio
-  - Same confidence level
+**What this chart shows:**
+- One bar per VaR model, all computed on the same date, same portfolio, and same confidence level
+- Isolates the effect of model assumptions on the VaR estimate
 
-This isolates model assumptions.
+**How to read it:**
 
-How to read it:
-- Historical VaR:
-  - Data-driven
-  - Sensitive to recent history
-- Parametric VaR:
-  - Assumes normality
-  - Often lowest (underestimates tails)
-- Monte Carlo VaR:
-  - Incorporates correlations
-  - Usually more conservative
+| Model | Behavior |
+|---|---|
+| Historical VaR | Data-driven; sensitive to recent history |
+| Parametric VaR | Assumes normality; often the lowest estimate (underestimates tails) |
+| Monte Carlo VaR | Incorporates correlations; typically the most conservative |
 
-Differences between bars = model risk.
-
+Differences between bars represent **model risk** — the uncertainty introduced by the choice of methodology.
