@@ -53,24 +53,6 @@ This project mirrors how risk engines are built and evaluated in real financial 
 
 ---
 
-## Project Structure
-
-```
-VaR-Risk-Modeling-Backtesting-Engine/
-│
-├── scripts/
-│   ├── run_single_asset.py   # Single asset analysis runner
-│   └── run_port.py           # Multi-asset portfolio runner
-│
-├── data.py                   # Downloads and cleans price data
-├── returns.py                # Computes log returns and portfolio returns
-├── models.py                 # Historical, Parametric, Monte Carlo VaR + CVaR
-├── backtest.py               # Exception detection and Kupiec POF test
-└── plots.py                  # VaR vs loss visualizations
-```
-
----
-
 ## Prerequisites & Installation
 
 **1. Clone the repository**
