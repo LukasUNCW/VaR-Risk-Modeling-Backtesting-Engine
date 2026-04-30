@@ -74,3 +74,122 @@ def kupiec_pof_test(exceptions: pd.Series, alpha: float) -> dict:
             "exceptions": x, # num of VaR breaches
             "n": n, # num of oberservations
             "hit_rate": phat} # exception freq
+
+
+def christoffersen_independence_test(exceptions: pd.Series) -> dict:
+    """
+    Christoffersen (1998) independence test.
+
+    Tests whether VaR exceptions cluster in time (are serially dependent).
+    Compares an i.i.d. Bernoulli model (H0) to a first-order Markov chain (H1).
+
+    Transition counts from consecutive pairs (I_{t-1}, I_t):
+        T00  no exception followed by no exception
+        T01  no exception followed by exception
+        T10  exception followed by no exception
+        T11  exception followed by exception (clustering)
+
+    LR_ind ~ chi2(df=1) under H0.
+
+    returns dict with LR_ind, p_value, transition counts, and conditional
+    exception probabilities pi_01 and pi_11.
+    """
+    exc = exceptions.dropna().to_numpy()
+    n = len(exc)
+
+    if n < 2:
+        raise ValueError("Need at least 2 observations for independence test.")
+
+    # build 2x2 transition counts from consecutive pairs
+    T00 = int(((exc[:-1] == 0) & (exc[1:] == 0)).sum())
+    T01 = int(((exc[:-1] == 0) & (exc[1:] == 1)).sum())
+    T10 = int(((exc[:-1] == 1) & (exc[1:] == 0)).sum())
+    T11 = int(((exc[:-1] == 1) & (exc[1:] == 1)).sum())
+
+    base = {"T00": T00, "T01": T01, "T10": T10, "T11": T11}
+
+    # degenerate cases: cannot estimate one or both rows of the transition matrix
+    row0_total = T00 + T01
+    row1_total = T10 + T11
+    if row0_total == 0 or row1_total == 0 or (T01 + T11) == 0:
+        return {"LR_ind": float("inf"), "p_value": 0.0, "pi_01": float("nan"),
+                "pi_11": float("nan"), **base}
+
+    pi_01 = T01 / row0_total   # P(exception | prev: no exception)
+    pi_11 = T11 / row1_total   # P(exception | prev: exception)
+
+    # degenerate: one conditional probability is 0 or 1 → log blows up
+    if pi_01 in (0.0, 1.0) or pi_11 in (0.0, 1.0):
+        return {"LR_ind": float("inf"), "p_value": 0.0,
+                "pi_01": float(pi_01), "pi_11": float(pi_11), **base}
+
+    # unconditional exception probability under H0 (i.i.d.)
+    p_hat = (T01 + T11) / (T00 + T01 + T10 + T11)
+
+    if p_hat in (0.0, 1.0):
+        return {"LR_ind": float("inf"), "p_value": 0.0,
+                "pi_01": float(pi_01), "pi_11": float(pi_11), **base}
+
+    # LR = -2 * [log L(H0) - log L(H1)]
+    ll_h0 = (T00 + T10) * np.log(1 - p_hat) + (T01 + T11) * np.log(p_hat)
+    ll_h1 = (T00 * np.log(1 - pi_01) + T01 * np.log(pi_01)
+             + T10 * np.log(1 - pi_11) + T11 * np.log(pi_11))
+    lr = -2 * (ll_h0 - ll_h1)
+
+    pval = 1 - chi2.cdf(lr, df=1)
+
+    return {
+        "LR_ind":  float(lr),
+        "p_value": float(pval),
+        "pi_01":   float(pi_01),
+        "pi_11":   float(pi_11),
+        **base,
+    }
+
+
+def christoffersen_cc_test(exceptions: pd.Series, alpha: float) -> dict:
+    """
+    Christoffersen (1998) conditional coverage test.
+
+    Combines Kupiec POF (unconditional coverage) and the independence test
+    into a joint test:
+        LR_cc = LR_pof + LR_ind  ~  chi2(df=2)
+
+    Rejects when either the exception frequency or the serial clustering of
+    exceptions is inconsistent with the model's stated confidence level.
+
+    returns dict with LR_cc, p_value, and all sub-test statistics.
+    """
+    pof = kupiec_pof_test(exceptions, alpha)
+    ind = christoffersen_independence_test(exceptions)
+
+    lr_pof = pof["LR_pof"]
+    lr_ind = ind["LR_ind"]
+
+    if lr_pof == float("inf") or lr_ind == float("inf"):
+        return {
+            "LR_cc":      float("inf"),
+            "p_value":    0.0,
+            "LR_pof":     lr_pof,
+            "LR_ind":     lr_ind,
+            "exceptions": pof["exceptions"],
+            "n":          pof["n"],
+            "hit_rate":   pof.get("hit_rate", float("nan")),
+            "pi_01":      ind["pi_01"],
+            "pi_11":      ind["pi_11"],
+        }
+
+    lr_cc = lr_pof + lr_ind
+    pval  = 1 - chi2.cdf(lr_cc, df=2)
+
+    return {
+        "LR_cc":      float(lr_cc),
+        "p_value":    float(pval),
+        "LR_pof":     float(lr_pof),
+        "LR_ind":     float(lr_ind),
+        "exceptions": pof["exceptions"],
+        "n":          pof["n"],
+        "hit_rate":   pof["hit_rate"],
+        "pi_01":      ind["pi_01"],
+        "pi_11":      ind["pi_11"],
+    }

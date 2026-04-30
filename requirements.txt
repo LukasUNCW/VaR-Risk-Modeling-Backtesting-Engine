@@ -3,3 +3,6 @@ pandas
 matplotlib
 scipy
 yfinance
+arch
+streamlit
+plotly
