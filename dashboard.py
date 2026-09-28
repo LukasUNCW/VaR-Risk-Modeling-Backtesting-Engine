@@ -68,14 +68,15 @@ def load_data(tickers: tuple[str, ...], start: str) -> pd.DataFrame:
 
 @st.cache_data(show_spinner=False)
 def rolling_historical_var(port_r: pd.Series, window: int, alpha: float) -> pd.Series:
-    return -port_r.rolling(window).quantile(1 - alpha)
+    # shift(1): VaR for day t uses returns through t-1 only (no look-ahead)
+    return -port_r.rolling(window).quantile(1 - alpha).shift(1)
 
 
 @st.cache_data(show_spinner=False)
 def rolling_parametric_var(port_r: pd.Series, window: int, alpha: float) -> pd.Series:
     z     = norm.ppf(1 - alpha)
-    mu    = port_r.rolling(window).mean()
-    sigma = port_r.rolling(window).std(ddof=1)
+    mu    = port_r.rolling(window).mean().shift(1)
+    sigma = port_r.rolling(window).std(ddof=1).shift(1)
     return -(mu + z * sigma)
 
 
