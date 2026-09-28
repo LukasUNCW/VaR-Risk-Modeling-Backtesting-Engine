@@ -1,7 +1,7 @@
 import pandas as pd
 import yfinance as yf
 
-def get_prices(tickers: list[str], start: str = "2015-01-01") -> pd.DataFrame:
+def get_prices(tickers: list[str], start: str = "2015-01-01", end: str | None = None) -> pd.DataFrame:
     """
     downloads adjusted historical price data for one or more tickers (single asset vs port)
 
@@ -10,6 +10,8 @@ def get_prices(tickers: list[str], start: str = "2015-01-01") -> pd.DataFrame:
             list of ticker symbols (e.g., ["SPY", "QQQ", "TLT"])
         start : str
             Start date for historical data (YYYY-MM-DD)
+        end : str | None
+            End date (exclusive, YYYY-MM-DD); None fetches through the latest close
     returns
             pandas DataFrame indexed by date with one column per ticker
             containing adjusted closing prices.
@@ -17,6 +19,7 @@ def get_prices(tickers: list[str], start: str = "2015-01-01") -> pd.DataFrame:
     df = yf.download( #downloading price data from Yahoo Finance (yfinance)
         tickers, # individual stocks
         start=start, # start date
+        end=end, # end date (None = latest available)
         auto_adjust=True,   # ensures prices are total return consistent
         progress=False
     )
@@ -27,7 +30,13 @@ def get_prices(tickers: list[str], start: str = "2015-01-01") -> pd.DataFrame:
 
     # yfinance returns multi-index columns when multiple tickers
     if isinstance(df.columns, pd.MultiIndex):
-        prices = df["Close"].copy()
+        prices = df["Close"]
+        missing = [t for t in tickers if t not in prices.columns]
+        if missing:
+            raise ValueError(f"No data returned for: {missing}")
+        # yfinance sorts columns alphabetically; restore the requested order
+        # so portfolio weights line up with the tickers they were written for
+        prices = prices[tickers].copy()
     # only activates else statement if only a single ticker is requested (single-level column)
     else:
         prices = df[["Close"]].copy()
