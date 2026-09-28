@@ -1,173 +1,109 @@
 # VaR Risk Modeling & Backtesting Engine
 
-A Python-based project that implements Value-at-Risk (VaR) models and industry-standard backtesting to measure and validate market risk for single and multi-asset portfolios.
+![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?logo=python&logoColor=white)
+![pandas](https://img.shields.io/badge/pandas-150458?logo=pandas&logoColor=white)
+![SciPy](https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white)
+![arch](https://img.shields.io/badge/arch-GARCH-555555)
+![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?logo=streamlit&logoColor=white)
 
-This project mirrors how risk engines are built and evaluated in real financial institutions, emphasizing:
-- Statistical rigor
-- Clean software design
-- Reproducibility
-- Realistic assumptions (rolling windows, no look-ahead bias)
+Five Value-at-Risk models, forecast out-of-sample every trading day for a decade, then put on trial with the same statistical backtests banks use to validate their risk engines.
 
----
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/var_backtest_dark.png">
+  <img alt="Rolling 99% VaR forecasts from Historical, Parametric and GARCH models plotted against realized daily portfolio losses, 2016 to 2026, with exceptions marked" src="assets/var_backtest.png">
+</picture>
 
-## Table of Contents
-- [Tech Stack](#tech-stack)
-- [Key Features](#key-features)
-- [Project Structure](#project-structure)
-- [Prerequisites & Installation](#prerequisites--installation)
-- [How to Run](#how-to-run)
-- [Visualizations](#visualizations)
+## Key findings
 
----
+Portfolio: 40% SPY / 30% QQQ / 20% TLT / 10% GLD · 99% one-day VaR · 250-day rolling window · 2,699 forecast days (Dec 2015 – Sep 2026)
 
-## Tech Stack
+- **Normal-based models breach 2.5× too often.** Parametric and Monte Carlo VaR (both assume Gaussian returns) were exceeded on ~2.5% of days against an expected 1%. Fat tails are the whole story.
+- **Extreme Value Theory gets the frequency right.** EVT-POT fits a Generalized Pareto tail directly and lands at a 1.19% exception rate, the only model with a comfortable Kupiec pass (p = 0.35).
+- **GARCH is the only model whose failures aren't clustered.** It re-prices risk within days of a volatility shock (independence p = 0.70), but its Normal innovations still make the tail too thin.
+- **No single model passes conditional coverage.** Getting both the *rate* and the *timing* of failures right needs both ideas at once, which points to GARCH with fat-tailed innovations or filtered historical simulation as the next step.
 
-| Tool | Purpose |
-|---|---|
-| Python 3.14 | Core language |
-| yfinance | Market data retrieval |
-| NumPy / pandas | Data manipulation and return computation |
-| SciPy | Statistical testing (Kupiec POF) |
-| Matplotlib | Visualization |
+## Backtest scorecard
 
----
+| Model | Exceptions | Hit rate | Kupiec POF p | Independence p | Cond. coverage p | Verdict (5%) |
+|---|---:|---:|---:|---:|---:|---|
+| Historical | 37 | 1.37% | 0.067 | 0.001 | 0.001 | Reject |
+| Parametric Normal | 69 | 2.56% | <0.001 | 0.009 | <0.001 | Reject |
+| Monte Carlo | 68 | 2.52% | <0.001 | 0.008 | <0.001 | Reject |
+| GARCH(1,1) | 64 | 2.37% | <0.001 | **0.702** | <0.001 | Reject |
+| EVT-POT | 32 | 1.19% | **0.346** | <0.001 | 0.001 | Reject |
 
-## Key Features
+Expected at 99%: 1.00% (≈27 exceptions). Kupiec tests *how often* the model fails, Christoffersen independence tests whether failures *cluster*, and conditional coverage tests both jointly. Reproduce with `python make_figures.py`. Full results are in [`assets/backtest_results.csv`](assets/backtest_results.csv).
 
-### Risk Models
-- **Historical VaR** (non-parametric, quantile-based): Estimates risk by taking the empirical loss quantile from historical returns without assuming any specific return distribution.
-- **Parametric VaR** (Normal): Models risk by assuming returns follow a normal distribution and computing VaR from the rolling mean and standard deviation.
-- **Monte Carlo VaR**: Simulates thousands of correlated asset return scenarios using estimated means and covariances to estimate portfolio-level VaR.
-- **Expected Shortfall (CVaR)**: Measures the average loss conditional on losses exceeding the VaR threshold, providing insight into the severity of extreme outcomes.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/exception_rate_dark.png">
+  <img alt="Horizontal bar chart of exception rate by model against the 1% expected rate" src="assets/exception_rate.png">
+</picture>
 
-### Backtesting
-- Rolling-window VaR estimation
-- Exception detection (losses exceeding VaR)
-- Kupiec Proportion-of-Failures (POF) test for statistical validation
+## Models
 
-### Visualization
-- VaR vs. realized-loss plots for diagnostic analysis
-- Exception timeline charts
-- Loss distribution histograms with VaR threshold overlay
-- Model comparison bar charts
+| Model | Idea | Implementation |
+|---|---|---|
+| **Historical** | Empirical 1% quantile of the last 250 returns. No distributional assumption | `var_historical` |
+| **Parametric Normal** | −(μ + z·σ) from the rolling mean and standard deviation | `var_parametric_normal` |
+| **Monte Carlo** | 25,000 draws from a multivariate Normal with the window's mean vector and covariance matrix | `var_monte_carlo_portfolio` |
+| **GARCH(1,1)** | One-step-ahead conditional volatility, so risk rises and decays with volatility clustering | `var_garch` |
+| **EVT-POT** | Generalized Pareto fit to losses above the 95th percentile, inverted at 99% | `var_evt_pot` |
+| **Expected Shortfall** | Average loss on days beyond VaR, i.e. how bad the bad days are | `cvar_historical` |
 
----
+Every forecast for day *t* is estimated only from returns through *t − 1*, so there is no look-ahead bias.
 
-## Prerequisites & Installation
+## Where the models break
 
-**1. Clone the repository**
+### Reaction speed: the COVID crash
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/var_backtest_covid_dark.png">
+  <img alt="Close-up of February to July 2020 showing GARCH VaR spiking and decaying quickly while Historical VaR rises late and stays flat" src="assets/var_backtest_covid.png">
+</picture>
+
+GARCH jumped from ~1% to over 11% within three weeks, then decayed as markets calmed. Historical VaR only moved once the crash days entered its window, and then stayed pinned at 4.6% until those days rolled out a year later. That's too slow on the way up and too conservative on the way down.
+
+### Clustering: when each model failed
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/exception_timeline_dark.png">
+  <img alt="Dot timeline of exception dates for each of the five models from 2016 to 2026" src="assets/exception_timeline.png">
+</picture>
+
+The rolling-window models fail in bursts (early 2018, March 2020, the 2022 rate shock, April 2025), which is exactly what the independence test flags. GARCH's failures are spread evenly through time, and there are simply too many of them.
+
+### Fat tails: why Normal VaR is too low
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/loss_distribution_dark.png">
+  <img alt="Log-scale histogram of daily portfolio losses with a Normal curve overlay and VaR and expected shortfall markers" src="assets/loss_distribution.png">
+</picture>
+
+On a log scale the Normal curve collapses past ~3%, but the portfolio kept producing losses out to 7%. Over the full sample the Normal 99% VaR is 1.98%, versus an empirical 2.47%, and the average loss beyond that threshold (expected shortfall) is 3.54%.
+
+## Interactive dashboard
+
+```bash
+streamlit run dashboard.py
+```
+
+Choose any tickers and weights, a confidence level (90/95/99%) and a window length. The dashboard runs Historical, Parametric, GARCH and EVT-POT side by side, with VaR charts, an exception timeline, a monthly exception heatmap, the full Kupiec/Christoffersen table and a GPD tail-fit diagnostic.
+
+> For speed, the dashboard fits GARCH once on the full sample and filters conditional volatility through it, so it's for exploration. The scorecard above re-fits GARCH on each rolling window.
+
+## Getting started
+
 ```bash
 git clone https://github.com/LukasUNCW/VaR-Risk-Modeling-Backtesting-Engine.git
 cd VaR-Risk-Modeling-Backtesting-Engine
+pip install -r requirements.txt
 ```
 
-**2. Install dependencies**
-```bash
-pip install yfinance numpy pandas scipy matplotlib
-```
-
-**3. Ensure you are using Python 3.14**
-```bash
-python --version
-```
-
----
-
-## How to Run
-
-Run both scripts from inside the project's root directory using the commands below.
-
-### Single Asset (`run_single_asset.py`)
-Analyzes one asset (e.g., SPY). Computes rolling Historical and Parametric VaR, runs backtesting, and plots results.
-
-```bash
-py -3.14 -m scripts.run_single_asset
-```
-
-### Portfolio (`run_port.py`)
-Analyzes multiple assets (configurable). Computes portfolio returns, runs Historical, Parametric, and Monte Carlo VaR, backtests all models, and plots portfolio risk.
-
-```bash
-py -3.14 -m scripts.run_port
-```
-
-> **Note:** To configure the portfolio assets, edit the ticker list inside `scripts/run_port.py`.
-
----
-
-## Visualizations
-
-### Rolling VaR Backtest (VaR vs. Realized Loss)
-
-<img width="1260" height="938" alt="var_backtest_portfolio" src="https://github.com/user-attachments/assets/b94c85da-f32f-4b86-91b0-a459ed3b113e" />
-
-**What this chart shows:**
-- X-axis: Time (trading days)
-- Y-axis: Loss magnitude (positive = bad)
-- Lines:
-  - **Realized loss**: actual next-day portfolio loss
-  - **VaR lines** (Historical / Parametric / Monte Carlo): predicted maximum loss at confidence level α (e.g., 99%)
-
-This is a rolling, out-of-sample risk forecast.
-
-**How to read it:**
-- Most of the time, the loss line stays below VaR — this is expected behavior
-- When the loss spikes above a VaR line, that is called an **exception**
-- During volatile periods, VaR lines rise (risk adapts)
-- During calm periods, VaR compresses (risk declines)
-
----
-
-### Exception Timeline (VaR Failures)
-
-<img width="1260" height="938" alt="exceptions_mc_portfolio" src="https://github.com/user-attachments/assets/98dc224f-7e5d-448c-bd7b-4b52914c5580" />
-
-**What this chart shows:**
-- Each dot = one VaR exception (a day where the realized loss exceeded the VaR estimate)
-- X-axis: Date
-- Y-axis: 1 = loss exceeded VaR
-
-This is a binary diagnostic of VaR model correctness.
-
-**How to read it:**
-- At a 99% confidence level (α = 0.99), you expect exceptions on roughly **1% of trading days**
-- **Clustered exceptions** indicate the model is slow to react — common during market crises or sudden volatility spikes
-- Parametric VaR tends to cluster more; Monte Carlo typically improves clustering behavior
-
----
-
-### Loss Distribution with VaR Threshold
-
-<img width="1260" height="938" alt="loss_dist_var_portfolio" src="https://github.com/user-attachments/assets/ddf4892c-8788-44df-aa76-a49c5a2a0770" />
-
-**What this chart shows:**
-- Histogram of historical portfolio losses
-- Vertical dashed line = VaR threshold
-- Area to the right of the line = tail risk
-
-This is the statistical meaning of VaR, visualized directly.
-
-**How to read it:**
-- VaR is a **quantile**, not a worst-case scenario
-- At 99% VaR: 99% of losses fall to the left of the line; 1% fall to the right (tail losses)
-- The tail is often skewed and heavier than a normal distribution assumes — this is why Historical and Monte Carlo VaR often outperform Parametric VaR
-
----
-
-### Model Comparison Bar Chart
-
-<img width="1260" height="938" alt="model_compare_portfolio" src="https://github.com/user-attachments/assets/ec517f2d-f595-4ad0-a191-18489f66518e" />
-
-**What this chart shows:**
-- One bar per VaR model, all computed on the same date, same portfolio, and same confidence level
-- Isolates the effect of model assumptions on the VaR estimate
-
-**How to read it:**
-
-| Model | Behavior |
+| Command | What it does |
 |---|---|
-| Historical VaR | Data-driven; sensitive to recent history |
-| Parametric VaR | Assumes normality; often the lowest estimate (underestimates tails) |
-| Monte Carlo VaR | Incorporates correlations; typically the most conservative |
+| `python run_single_asset.py` | Historical and Parametric VaR backtest on SPY |
+| `python run_port.py` | Historical, Parametric and Monte Carlo VaR backtest on the four-asset portfolio (edit the ticker and weight lists at the top) |
+| `python make_figures.py` | Full five-model backtest; regenerates every chart and the scorecard in `assets/` (~1 min) |
+| `streamlit run dashboard.py` | Interactive dashboard |
 
-Differences between bars represent **model risk** — the uncertainty introduced by the choice of methodology.
+Market data comes from Yahoo Finance via `yfinance` (adjusted closes, log returns).

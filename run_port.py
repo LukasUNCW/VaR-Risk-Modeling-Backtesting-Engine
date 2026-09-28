@@ -1,9 +1,9 @@
 import pandas as pd
-from varlab.data import get_prices
-from varlab.returns import log_returns, portfolio_returns
-from varlab.models import var_monte_carlo_portfolio
-from varlab.backtest import exception_series, kupiec_pof_test
-from varlab.plots import plot_var_backtest
+from data import get_prices
+from returns import log_returns, portfolio_returns
+from models import var_monte_carlo_portfolio
+from backtest import exception_series, kupiec_pof_test
+from plots import plot_var_backtest
 from scipy.stats import norm
 
 def main():
@@ -29,10 +29,11 @@ def main():
 
     port_r = portfolio_returns(rets, weights) # compute port return series using normlized weights
 
-    var_hist = -port_r.rolling(window).quantile(1 - alpha) # rolling empirical (1 - alpha) quantile of port returns
+    # shift(1) so VaR for day t only uses returns through t-1 (no look-ahead)
+    var_hist = -port_r.rolling(window).quantile(1 - alpha).shift(1) # rolling empirical (1 - alpha) quantile of port returns
     z = norm.ppf(1 - alpha) # z score for parametric norm VaR
-    mu = port_r.rolling(window).mean() # rolling mean of port returns
-    sigma = port_r.rolling(window).std(ddof=1) # rolling vol (sample sd)
+    mu = port_r.rolling(window).mean().shift(1) # rolling mean of port returns
+    sigma = port_r.rolling(window).std(ddof=1).shift(1) # rolling vol (sample sd)
     var_param = -(mu + z * sigma) # parametric norm VaR form, VaR = -(mu + z * sd)
 
     var_mc = [] # declared list to store rolling Monte Carlo VaR values

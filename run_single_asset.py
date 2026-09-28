@@ -1,8 +1,8 @@
 import pandas as pd
-from varlab.data import get_prices
-from varlab.returns import log_returns
-from varlab.backtest import exception_series, kupiec_pof_test
-from varlab.plots import plot_var_backtest
+from data import get_prices
+from returns import log_returns
+from backtest import exception_series, kupiec_pof_test
+from plots import plot_var_backtest
 from scipy.stats import norm
 
 def main():
@@ -20,11 +20,12 @@ def main():
     r = log_returns(prices)[ticker] # compute log returns and extract the single asset Series
 
     
-    var_hist = -r.rolling(window).quantile(1 - alpha) # compute rolling empirical (1 - alpha) quantile of returns
+    # shift(1) so VaR for day t only uses returns through t-1 (no look-ahead)
+    var_hist = -r.rolling(window).quantile(1 - alpha).shift(1) # compute rolling empirical (1 - alpha) quantile of returns
 
     z = norm.ppf(1 - alpha) # z score corresponding to the left tail of the Normal distribution
-    mu = r.rolling(window).mean() # rolling mean of returns
-    sigma = r.rolling(window).std(ddof=1) # rolling sd 
+    mu = r.rolling(window).mean().shift(1) # rolling mean of returns
+    sigma = r.rolling(window).std(ddof=1).shift(1) # rolling sd
     var_param = -(mu + z * sigma) # VaR = -(mu + z * sd) parametric VaR form
 
     out = pd.DataFrame({ # combine realized losses and VaR estimates
@@ -39,8 +40,8 @@ def main():
 
     
     print(
-        f"\nSingle-Asset VaR Backtest: {ticker} | 
-        alpha={alpha} | window={window}"
+        f"\nSingle-Asset VaR Backtest: {ticker} | "
+        f"alpha={alpha} | window={window}"
     )
 
     # test whether exception freq matches expectation
